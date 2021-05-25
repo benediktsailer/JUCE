@@ -37,7 +37,7 @@ namespace PathHelpers
 
     static String nextToken (String::CharPointerType& t)
     {
-        t.incrementToEndOfWhitespace();
+        t = t.findEndOfWhitespace();
 
         auto start = t;
         size_t numChars = 0;

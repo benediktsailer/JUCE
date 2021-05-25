@@ -187,7 +187,7 @@ bool PropertiesFile::loadAsXml()
 {
     if (auto doc = parseXMLIfTagMatches (file, PropertyFileConstants::fileTag))
     {
-        for (auto* e : doc->getChildWithTagNameIterator (PropertyFileConstants::valueTag))
+        forEachXmlChildElementWithTagName (*doc, e, PropertyFileConstants::valueTag)
         {
             auto name = e->getStringAttribute (PropertyFileConstants::nameAttribute);
 

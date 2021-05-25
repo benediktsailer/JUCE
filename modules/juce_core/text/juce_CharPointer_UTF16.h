@@ -426,9 +426,6 @@ public:
     /** Returns the first non-whitespace character in the string. */
     CharPointer_UTF16 findEndOfWhitespace() const noexcept      { return CharacterFunctions::findEndOfWhitespace (*this); }
 
-    /** Move this pointer to the first non-whitespace character in the string. */
-    void incrementToEndOfWhitespace() noexcept                  { CharacterFunctions::incrementToEndOfWhitespace (*this); }
-
     /** Returns true if the given unicode character can be represented in this encoding. */
     static bool canRepresent (juce_wchar character) noexcept
     {

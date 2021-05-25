@@ -23,8 +23,6 @@
 namespace juce
 {
 
-#if ! JUCE_WASM
-
 NamedPipe::NamedPipe() {}
 
 NamedPipe::~NamedPipe()
@@ -267,7 +265,6 @@ private:
 
 static NamedPipeTests namedPipeTests;
 
-#endif
 #endif
 
 } // namespace juce

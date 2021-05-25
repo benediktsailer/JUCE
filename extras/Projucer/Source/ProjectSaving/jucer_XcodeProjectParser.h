@@ -119,13 +119,7 @@ public:
     }
 
     //==============================================================================
-    struct BuildProduct
-    {
-        String name;
-        String path;
-    };
-
-    static std::vector<BuildProduct> parseBuildProducts (const File& projectFile)
+    static std::vector<std::pair<String, String>> parseBuildProducts (const File& projectFile)
     {
         auto objects = parseObjects (projectFile);
 
@@ -138,7 +132,7 @@ public:
         auto targetRefs = parseObjectItemList (mainObject.second, "targets");
         jassert (! targetRefs.isEmpty());
 
-        std::vector<BuildProduct> results;
+        std::vector<std::pair<String, String>> results;
 
         for (auto& t : targetRefs)
         {
@@ -225,7 +219,7 @@ private:
     {
         std::smatch match;
 
-        if (! std::regex_search (source, match, std::regex ("[ ;{]+" + key + " *= *(.*?) *;")))
+        if (! std::regex_search (source, match, std::regex ("[ ;{]+" + key + " *= *(.*?)[ ;]+")))
         {
             jassertfalse;
             return {};

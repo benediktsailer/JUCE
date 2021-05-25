@@ -872,6 +872,7 @@ public:
         from a stream of bytes.
 
         A valid value requires that `bytesUsed` is greater than 0.
+        If `bytesUsed <= 0` this object should be considered invalid.
     */
     struct VariableLengthValue
     {
@@ -879,8 +880,6 @@ public:
 
         VariableLengthValue (int valueIn, int bytesUsedIn)
             : value (valueIn), bytesUsed (bytesUsedIn) {}
-
-        bool isValid() const noexcept  { return bytesUsed > 0; }
 
         int value = 0;
         int bytesUsed = 0;
@@ -892,8 +891,7 @@ public:
         @param maxBytesToUse    the number of bytes in the region following `data`
         @returns                a struct containing the parsed value, and the number
                                 of bytes that were read. If parsing fails, both the
-                                `value` and `bytesUsed` fields will be set to 0 and
-                                `isValid()` will return false
+                                `value` and `bytesUsed` fields will be set to 0.
     */
     static VariableLengthValue readVariableLengthValue (const uint8* data,
                                                         int maxBytesToUse) noexcept;

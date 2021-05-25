@@ -1085,28 +1085,24 @@ namespace AAXClasses
                 SetParameterNormalizedValue (paramID, (double) newValue);
         }
 
-        void audioProcessorChanged (AudioProcessor* processor, const ChangeDetails& details) override
+        void audioProcessorChanged (AudioProcessor* processor) override
         {
             ++mNumPlugInChanges;
 
-            if (details.parameterInfoChanged)
+            auto numParameters = juceParameters.getNumParameters();
+
+            for (int i = 0; i < numParameters; ++i)
             {
-                auto numParameters = juceParameters.getNumParameters();
-
-                for (int i = 0; i < numParameters; ++i)
+                if (auto* p = mParameterManager.GetParameterByID (getAAXParamIDFromJuceIndex (i)))
                 {
-                    if (auto* p = mParameterManager.GetParameterByID (getAAXParamIDFromJuceIndex (i)))
-                    {
-                        auto newName = juceParameters.getParamForIndex (i)->getName (31);
+                    auto newName = juceParameters.getParamForIndex (i)->getName (31);
 
-                        if (p->Name() != newName.toRawUTF8())
-                            p->SetName (AAX_CString (newName.toRawUTF8()));
-                    }
+                    if (p->Name() != newName.toRawUTF8())
+                        p->SetName (AAX_CString (newName.toRawUTF8()));
                 }
             }
 
-            if (details.latencyChanged)
-                check (Controller()->SetSignalLatency (processor->getLatencySamples()));
+            check (Controller()->SetSignalLatency (processor->getLatencySamples()));
         }
 
         void audioProcessorParameterChangeGestureBegin (AudioProcessor*, int parameterIndex) override
@@ -1127,20 +1123,6 @@ namespace AAXClasses
             {
                 case AAX_eNotificationEvent_EnteringOfflineMode:  pluginInstance->setNonRealtime (true);  break;
                 case AAX_eNotificationEvent_ExitingOfflineMode:   pluginInstance->setNonRealtime (false); break;
-
-                case AAX_eNotificationEvent_ASProcessingState:
-                {
-                    if (data != nullptr && size == sizeof (AAX_EProcessingState))
-                    {
-                        const auto state = *static_cast<const AAX_EProcessingState*> (data);
-                        const auto nonRealtime = state == AAX_eProcessingState_Start
-                                              || state == AAX_eProcessingState_StartPass
-                                              || state == AAX_eProcessingState_BeginPassGroup;
-                        pluginInstance->setNonRealtime (nonRealtime);
-                    }
-
-                    break;
-                }
 
                 case AAX_eNotificationEvent_TrackNameChanged:
                     if (data != nullptr)

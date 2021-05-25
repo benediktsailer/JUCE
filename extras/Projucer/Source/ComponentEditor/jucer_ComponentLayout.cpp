@@ -274,7 +274,7 @@ void ComponentLayout::paste()
     {
         selected.deselectAll();
 
-        for (auto* e : doc->getChildIterator())
+        forEachXmlChildElement (*doc, e)
             if (Component* newComp = addComponentFromXml (*e, true))
                 selected.addToSelection (newComp);
 

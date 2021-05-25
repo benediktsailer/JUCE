@@ -193,7 +193,7 @@ bool ButtonDocument::loadFromXml (const XmlElement& xml)
         for (int i = 7; --i >= 0;)
             paintStatesEnabled [i] = false;
 
-        for (auto* e : xml.getChildWithTagNameIterator (PaintRoutine::xmlTagName))
+        forEachXmlChildElementWithTagName (xml, e, PaintRoutine::xmlTagName)
         {
             const int stateIndex = stateNameToIndex (e->getStringAttribute ("buttonState"));
 

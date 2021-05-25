@@ -334,7 +334,7 @@ private:
     };
 
     //==============================================================================
-    template <class WrapperType>
+    template<class WrapperType>
     struct Win32MidiDeviceQuery
     {
         static Array<MidiDeviceInfo> getAvailableDevices()
@@ -782,9 +782,9 @@ private:
     public:
         virtual ~DeviceCallbackHandler() {};
 
-        JUCE_COMCALL addDevice (IDeviceInformation*) = 0;
-        JUCE_COMCALL removeDevice (IDeviceInformationUpdate*) = 0;
-        JUCE_COMCALL updateDevice (IDeviceInformationUpdate*) = 0;
+        virtual HRESULT addDevice (IDeviceInformation*) = 0;
+        virtual HRESULT removeDevice (IDeviceInformationUpdate*) = 0;
+        virtual HRESULT updateDevice (IDeviceInformationUpdate*) = 0;
 
         bool attach (HSTRING deviceSelector, DeviceInformationKind infoKind)
         {
@@ -834,7 +834,7 @@ private:
                 }
             }
 
-            ComSmartPtr<IIterable<HSTRING>> iter;
+            WinRTWrapper::ComPtr<IIterable<HSTRING>> iter;
             auto hr = requestedProperties->QueryInterface (__uuidof (IIterable<HSTRING>), (void**) iter.resetAndGetPointerAddress());
 
             if (FAILED (hr))
@@ -891,7 +891,7 @@ private:
             watcher = nullptr;
         }
 
-        template <typename InfoType>
+        template<typename InfoType>
         IInspectable* getValueFromDeviceInfo (String key, InfoType* info)
         {
             __FIMapView_2_HSTRING_IInspectable* properties;
@@ -924,7 +924,7 @@ private:
 
         String getGUIDFromInspectable (IInspectable& inspectable)
         {
-            ComSmartPtr<IReference<GUID>> guidRef;
+            WinRTWrapper::ComPtr<IReference<GUID>> guidRef;
             auto hr = inspectable.QueryInterface (__uuidof (IReference<GUID>),
                                                   (void**) guidRef.resetAndGetPointerAddress());
 
@@ -951,7 +951,7 @@ private:
 
         bool getBoolFromInspectable (IInspectable& inspectable)
         {
-            ComSmartPtr<IReference<bool>> boolRef;
+            WinRTWrapper::ComPtr<IReference<bool>> boolRef;
             auto hr = inspectable.QueryInterface (__uuidof (IReference<bool>),
                                                   (void**) boolRef.resetAndGetPointerAddress());
 
@@ -978,7 +978,7 @@ private:
         struct DeviceEnumerationThread   : public Thread
         {
             DeviceEnumerationThread (DeviceCallbackHandler& h,
-                                     ComSmartPtr<IDeviceWatcher>& w,
+                                     WinRTWrapper::ComPtr<IDeviceWatcher>& w,
                                      EventRegistrationToken& added,
                                      EventRegistrationToken& removed,
                                      EventRegistrationToken& updated)
@@ -1012,12 +1012,12 @@ private:
             }
 
             DeviceCallbackHandler& handler;
-            ComSmartPtr<IDeviceWatcher>& watcher;
+            WinRTWrapper::ComPtr<IDeviceWatcher>& watcher;
             EventRegistrationToken& deviceAddedToken, deviceRemovedToken, deviceUpdatedToken;
         };
 
         //==============================================================================
-        ComSmartPtr<IDeviceWatcher> watcher;
+        WinRTWrapper::ComPtr<IDeviceWatcher> watcher;
 
         EventRegistrationToken deviceAddedToken   { 0 },
                                deviceRemovedToken { 0 },
@@ -1222,7 +1222,7 @@ private:
     template <typename COMFactoryType>
     struct MidiIODeviceWatcher final   : private DeviceCallbackHandler
     {
-        MidiIODeviceWatcher (ComSmartPtr<COMFactoryType>& comFactory)
+        MidiIODeviceWatcher (WinRTWrapper::ComPtr<COMFactoryType>& comFactory)
             : factory (comFactory)
         {
         }
@@ -1407,7 +1407,7 @@ private:
             return {};
         }
 
-        ComSmartPtr<COMFactoryType>& factory;
+        WinRTWrapper::ComPtr<COMFactoryType>& factory;
 
         Array<WinRTMIDIDeviceInfo> connectedDevices;
         CriticalSection deviceChanges;
@@ -1421,8 +1421,8 @@ private:
     struct OpenMidiPortThread  : public Thread
     {
         OpenMidiPortThread (String threadName, String midiDeviceID,
-                            ComSmartPtr<COMFactoryType>& comFactory,
-                            ComSmartPtr<COMInterfaceType>& comPort)
+                            WinRTWrapper::ComPtr<COMFactoryType>& comFactory,
+                            WinRTWrapper::ComPtr<COMInterfaceType>& comPort)
             : Thread (threadName),
               deviceID (midiDeviceID),
               factory (comFactory),
@@ -1438,7 +1438,7 @@ private:
         void run() override
         {
             WinRTWrapper::ScopedHString hDeviceId (deviceID);
-            ComSmartPtr<IAsyncOperation<COMType*>> asyncOp;
+            WinRTWrapper::ComPtr<IAsyncOperation<COMType*>> asyncOp;
             auto hr = factory->FromIdAsync (hDeviceId.get(), asyncOp.resetAndGetPointerAddress());
 
             if (FAILED (hr))
@@ -1466,8 +1466,8 @@ private:
         }
 
         const String deviceID;
-        ComSmartPtr<COMFactoryType>& factory;
-        ComSmartPtr<COMInterfaceType>& port;
+        WinRTWrapper::ComPtr<COMFactoryType>& factory;
+        WinRTWrapper::ComPtr<COMInterfaceType>& port;
         WaitableEvent portOpened { true };
     };
 
@@ -1552,7 +1552,7 @@ private:
         BLEDeviceWatcher& bleDeviceWatcher;
         WinRTMIDIDeviceInfo deviceInfo;
         bool isBLEDevice = false;
-        ComSmartPtr<MIDIPort> midiPort;
+        WinRTWrapper::ComPtr<MIDIPort> midiPort;
     };
 
     //==============================================================================
@@ -1637,19 +1637,19 @@ private:
             if (! isStarted)
                 return S_OK;
 
-            ComSmartPtr<IMidiMessage> message;
+            WinRTWrapper::ComPtr<IMidiMessage> message;
             auto hr = args->get_Message (message.resetAndGetPointerAddress());
 
             if (FAILED (hr))
                 return hr;
 
-            ComSmartPtr<IBuffer> buffer;
+            WinRTWrapper::ComPtr<IBuffer> buffer;
             hr = message->get_RawData (buffer.resetAndGetPointerAddress());
 
             if (FAILED (hr))
                 return hr;
 
-            ComSmartPtr<Windows::Storage::Streams::IBufferByteAccess> bufferByteAccess;
+            WinRTWrapper::ComPtr<Windows::Storage::Streams::IBufferByteAccess> bufferByteAccess;
             hr = buffer->QueryInterface (bufferByteAccess.resetAndGetPointerAddress());
 
             if (FAILED (hr))
@@ -1775,15 +1775,15 @@ private:
         String getDeviceName() override          { return deviceInfo.name; }
 
         //==============================================================================
-        ComSmartPtr<IBuffer> buffer;
-        ComSmartPtr<Windows::Storage::Streams::IBufferByteAccess> bufferByteAccess;
+        WinRTWrapper::ComPtr<IBuffer> buffer;
+        WinRTWrapper::ComPtr<Windows::Storage::Streams::IBufferByteAccess> bufferByteAccess;
         uint8_t* bufferData = nullptr;
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (WinRTOutputWrapper);
     };
 
-    ComSmartPtr<IMidiInPortStatics>  midiInFactory;
-    ComSmartPtr<IMidiOutPortStatics> midiOutFactory;
+    WinRTWrapper::ComPtr<IMidiInPortStatics>  midiInFactory;
+    WinRTWrapper::ComPtr<IMidiOutPortStatics> midiOutFactory;
 
     std::unique_ptr<MidiIODeviceWatcher<IMidiInPortStatics>>  inputDeviceWatcher;
     std::unique_ptr<MidiIODeviceWatcher<IMidiOutPortStatics>> outputDeviceWatcher;

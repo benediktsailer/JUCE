@@ -30,7 +30,7 @@ namespace RelativePointHelpers
 {
     inline void skipComma (String::CharPointerType& s)
     {
-        s.incrementToEndOfWhitespace();
+        s = s.findEndOfWhitespace();
 
         if (*s == ',')
             ++s;

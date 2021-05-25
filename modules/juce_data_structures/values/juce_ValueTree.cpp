@@ -1003,7 +1003,7 @@ ValueTree ValueTree::fromXml (const XmlElement& xml)
         ValueTree v (xml.getTagName());
         v.object->properties.setFromXmlAttributes (xml);
 
-        for (auto* e : xml.getChildIterator())
+        forEachXmlChildElement (xml, e)
             v.appendChild (fromXml (*e), nullptr);
 
         return v;

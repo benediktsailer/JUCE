@@ -246,7 +246,6 @@ juce::build_tools::PlistOptions parsePlistOptions (const juce::File& file,
     updateField ("FILE_SHARING_ENABLED",                 result.fileSharingEnabled);
     updateField ("DOCUMENT_BROWSER_ENABLED",             result.documentBrowserEnabled);
     updateField ("STATUS_BAR_HIDDEN",                    result.statusBarHidden);
-    updateField ("REQUIRES_FULL_SCREEN",                 result.requiresFullScreen);
     updateField ("BACKGROUND_AUDIO_ENABLED",             result.backgroundAudioEnabled);
     updateField ("BACKGROUND_BLE_ENABLED",               result.backgroundBleEnabled);
     updateField ("PUSH_NOTIFICATIONS_ENABLED",           result.pushNotificationsEnabled);
@@ -483,19 +482,7 @@ int main (int argc, char** argv)
 
     return juce::ConsoleApplication::invokeCatchingFailures ([argc, argv]
     {
-        if (argc < 1)
-            juce::ConsoleApplication::fail ("No arguments passed", 1);
-
-        const auto getString = [&] (const char* text)
-        {
-            return juce::String (juce::CharPointer_UTF8 (text));
-        };
-
-        std::vector<juce::String> arguments;
-        std::transform (argv, argv + argc, std::back_inserter (arguments), getString);
-
-        juce::ArgumentList argumentList { arguments.front(),
-                                          juce::StringArray (arguments.data() + 1, (int) arguments.size() - 1) };
+        juce::ArgumentList argumentList { argc, argv };
 
         using Fn = typename std::add_lvalue_reference<decltype (writeBinaryData)>::type;
 

@@ -227,7 +227,7 @@ bool KeyPressMappingSet::restoreFromXml (const XmlElement& xmlVersion)
             clearAllKeyPresses();
         }
 
-        for (auto* map : xmlVersion.getChildIterator())
+        forEachXmlChildElement (xmlVersion, map)
         {
             const CommandID commandId = map->getStringAttribute ("commandId").getHexValue32();
 

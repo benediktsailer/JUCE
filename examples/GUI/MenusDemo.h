@@ -164,8 +164,6 @@ public:
         addAndMakeVisible (outerCommandTarget);
         addAndMakeVisible (sidePanel);
 
-        setWantsKeyboardFocus (true);
-
         setSize (500, 500);
     }
 

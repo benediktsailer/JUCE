@@ -324,14 +324,12 @@ class WebInputStream::Pimpl
 public:
     enum { contentStreamCacheSize = 1024 };
 
-    Pimpl (WebInputStream&, const URL& urlToCopy, bool addParametersToBody)
+    Pimpl (WebInputStream&, const URL& urlToCopy, bool shouldBePost)
         : url (urlToCopy),
           isContentURL (urlToCopy.getScheme() == "content"),
-          addParametersToRequestBody (addParametersToBody),
-          hasBodyDataToSend (addParametersToRequestBody || url.hasBodyDataToSend()),
-          httpRequest (hasBodyDataToSend ? "POST" : "GET")
-    {
-    }
+          isPost (shouldBePost),
+          httpRequest (isPost ? "POST" : "GET")
+    {}
 
     ~Pimpl()
     {
@@ -375,18 +373,14 @@ public:
         }
         else
         {
-            String address = url.toString (! addParametersToRequestBody);
+            String address = url.toString (! isPost);
 
             if (! address.contains ("://"))
                 address = "http://" + address;
 
             MemoryBlock postData;
-
-            if (hasBodyDataToSend)
-                WebInputStream::createHeadersAndPostData (url,
-                                                          headers,
-                                                          postData,
-                                                          addParametersToRequestBody);
+            if (isPost)
+                WebInputStream::createHeadersAndPostData (url, headers, postData);
 
             jbyteArray postDataArray = nullptr;
 
@@ -412,7 +406,7 @@ public:
                     stream = GlobalRef (LocalRef<jobject> (env->CallStaticObjectMethod (HTTPStream,
                                                                                         HTTPStream.createHTTPStream,
                                                                                         javaString (address).get(),
-                                                                                        (jboolean) addParametersToRequestBody,
+                                                                                        (jboolean) isPost,
                                                                                         postDataArray,
                                                                                         javaString (headers).get(),
                                                                                         (jint) timeOutMs,
@@ -541,8 +535,7 @@ public:
 
 private:
     const URL url;
-    const bool isContentURL, addParametersToRequestBody, hasBodyDataToSend;
-    bool eofStreamReached = false;
+    bool isContentURL, isPost, eofStreamReached = false;
     int numRedirectsToFollow = 5, timeOutMs = 0;
     String httpRequest, headers;
     StringPairArray responseHeaders;

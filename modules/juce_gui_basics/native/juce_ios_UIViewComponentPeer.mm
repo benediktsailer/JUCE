@@ -327,10 +327,7 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
 
 - (BOOL) prefersStatusBarHidden
 {
-    if (isKioskModeView (self))
-        return true;
-
-    return [[[NSBundle mainBundle] objectForInfoDictionaryKey: @"UIStatusBarHidden"] boolValue];
+    return isKioskModeView (self);
 }
 
 #if defined (__IPHONE_11_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_11_0
@@ -389,8 +386,6 @@ MultiTouchMapper<UITouch*> UIViewComponentPeer::currentTouches;
 
     hiddenTextView.autocapitalizationType = UITextAutocapitalizationTypeNone;
     hiddenTextView.autocorrectionType = UITextAutocorrectionTypeNo;
-    hiddenTextView.inputAssistantItem.leadingBarButtonGroups = @[];
-    hiddenTextView.inputAssistantItem.trailingBarButtonGroups = @[];
 
     return self;
 }
@@ -666,7 +661,7 @@ void UIViewComponentPeer::updateScreenBounds()
     auto oldArea = component.getBounds();
     auto oldDesktop = desktop.getDisplays().getPrimaryDisplay()->userArea;
 
-    forceDisplayUpdate();
+    const_cast<Displays&> (desktop.getDisplays()).refresh();
 
     if (fullScreen)
     {

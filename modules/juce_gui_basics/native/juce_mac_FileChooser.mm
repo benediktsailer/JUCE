@@ -183,7 +183,6 @@ public:
 
     void runModally() override
     {
-       #if JUCE_MODAL_LOOPS_PERMITTED
         ensurePanelSafe();
 
         std::unique_ptr<TemporaryMainMenuWithStandardCommands> tempMenu;
@@ -194,9 +193,6 @@ public:
         jassert (panel != nil);
         auto result = [panel runModal];
         finished (result);
-       #else
-        jassertfalse;
-       #endif
     }
 
     bool canModalEventBeSentToComponent (const Component* targetComponent) override
@@ -377,10 +373,10 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Native)
 };
 
-std::shared_ptr<FileChooser::Pimpl> FileChooser::showPlatformDialog (FileChooser& owner, int flags,
-                                                                     FilePreviewComponent* preview)
+FileChooser::Pimpl* FileChooser::showPlatformDialog (FileChooser& owner, int flags,
+                                                     FilePreviewComponent* preview)
 {
-    return std::make_shared<FileChooser::Native> (owner, flags, preview);
+    return new FileChooser::Native (owner, flags, preview);
 }
 
 bool FileChooser::isPlatformDialogAvailable()

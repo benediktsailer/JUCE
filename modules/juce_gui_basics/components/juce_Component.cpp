@@ -489,7 +489,7 @@ Component::~Component()
 
     if (parentComponent != nullptr)
         parentComponent->removeChildComponent (parentComponent->childComponentList.indexOf (this), true, false);
-    else if (hasKeyboardFocus (true))
+    else if (currentlyFocusedComponent == this || isParentOf (currentlyFocusedComponent))
         giveAwayFocus (currentlyFocusedComponent != this);
 
     if (flags.hasHeavyweightPeerFlag)
@@ -546,12 +546,11 @@ void Component::setVisible (bool shouldBeVisible)
         {
             ComponentHelpers::releaseAllCachedImageResources (*this);
 
-            if (hasKeyboardFocus (true))
+            if (currentlyFocusedComponent == this || isParentOf (currentlyFocusedComponent))
             {
                 if (parentComponent != nullptr)
                     parentComponent->grabKeyboardFocus();
-
-                if (hasKeyboardFocus (true))
+                else
                     giveAwayFocus (true);
             }
         }
@@ -2595,9 +2594,6 @@ void Component::internalMagnifyGesture (MouseInputSource source, Point<float> re
 
 void Component::sendFakeMouseMove() const
 {
-    if (flags.ignoresMouseClicksFlag && ! flags.allowChildMouseClicksFlag)
-        return;
-
     auto mainMouse = Desktop::getInstance().getMainMouseSource();
 
     if (! mainMouse.isDragging())

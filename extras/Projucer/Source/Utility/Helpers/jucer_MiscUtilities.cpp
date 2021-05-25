@@ -123,12 +123,12 @@ StringPairArray parsePreprocessorDefs (const String& text)
     while (! s.isEmpty())
     {
         String token, value;
-        s.incrementToEndOfWhitespace();
+        s = s.findEndOfWhitespace();
 
         while ((! s.isEmpty()) && *s != '=' && ! s.isWhitespace())
             token << s.getAndAdvance();
 
-        s.incrementToEndOfWhitespace();
+        s = s.findEndOfWhitespace();
 
         if (*s == '=')
         {

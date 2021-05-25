@@ -231,7 +231,7 @@ namespace MidiFileHelpers
         {
             const auto delay = MidiMessage::readVariableLengthValue (data, (int) size);
 
-            if (! delay.isValid())
+            if (delay.bytesUsed == 0)
                 break;
 
             data += delay.bytesUsed;

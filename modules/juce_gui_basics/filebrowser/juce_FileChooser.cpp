@@ -158,7 +158,7 @@ bool FileChooser::showDialog (const int flags, FilePreviewComponent* const previ
 {
     FocusRestorer focusRestorer;
 
-    pimpl = createPimpl (flags, previewComp);
+    pimpl.reset (createPimpl (flags, previewComp));
     pimpl->runModally();
 
     // ensure that the finished function was invoked
@@ -179,12 +179,12 @@ void FileChooser::launchAsync (int flags, std::function<void (const FileChooser&
 
     asyncCallback = std::move (callback);
 
-    pimpl = createPimpl (flags, previewComp);
+    pimpl.reset (createPimpl (flags, previewComp));
     pimpl->launch();
 }
 
 
-std::shared_ptr<FileChooser::Pimpl> FileChooser::createPimpl (int flags, FilePreviewComponent* previewComp)
+FileChooser::Pimpl* FileChooser::createPimpl (int flags, FilePreviewComponent* previewComp)
 {
     results.clear();
 
@@ -214,8 +214,10 @@ std::shared_ptr<FileChooser::Pimpl> FileChooser::createPimpl (int flags, FilePre
     {
         return showPlatformDialog (*this, flags, previewComp);
     }
-
-    return std::make_unique<NonNative> (*this, flags, previewComp);
+    else
+    {
+        return new NonNative (*this, flags, previewComp);
+    }
 }
 
 Array<File> FileChooser::getResults() const noexcept

@@ -46,7 +46,7 @@ public:
         template <typename OperationType>
         bool applyOperationToChildWithID (const String& id, OperationType& op) const
         {
-            for (auto* e : xml->getChildIterator())
+            forEachXmlChildElement (*xml, e)
             {
                 XmlPath child (e, this);
 
@@ -415,7 +415,7 @@ public:
             case 'z':
                 path.closeSubPath();
                 last = last2 = subpathStart;
-                d.incrementToEndOfWhitespace();
+                d = d.findEndOfWhitespace();
                 currentCommand = 'M';
                 break;
 
@@ -462,7 +462,7 @@ private:
     //==============================================================================
     void parseSubElements (const XmlPath& xml, DrawableComposite& parentDrawable, bool shouldParseClip = true)
     {
-        for (auto* e : xml->getChildIterator())
+        forEachXmlChildElement (*xml, e)
         {
             const XmlPath child (xml.getChild (e));
 
@@ -755,7 +755,7 @@ private:
 
             dashLengths.add (value);
 
-            t.incrementToEndOfWhitespace();
+            t = t.findEndOfWhitespace();
 
             if (*t == ',')
                 ++t;
@@ -830,7 +830,7 @@ private:
 
         if (fillXml.xml != nullptr)
         {
-            for (auto* e : fillXml->getChildWithTagNameIterator ("stop"))
+            forEachXmlChildElementWithTagName (*fillXml, e, "stop")
             {
                 auto col = parseColour (fillXml.getChild (e), "stop-color", Colours::black);
 
@@ -1080,7 +1080,7 @@ private:
         auto dc = new DrawableComposite();
         setCommonAttributes (*dc, xml);
 
-        for (auto* e : xml->getChildIterator())
+        forEachXmlChildElement (*xml, e)
         {
             if (e->isTextElement())
             {

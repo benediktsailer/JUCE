@@ -113,7 +113,7 @@ public:
            startTimer (500);
     }
 
-    ~StandalonePluginHolder() override
+    virtual ~StandalonePluginHolder() override
     {
         stopTimer();
 
@@ -612,10 +612,6 @@ public:
         {
             centreWithSize (getWidth(), getHeight());
         }
-
-        if (auto* processor = getAudioProcessor())
-            if (auto* editor = processor->getActiveEditor())
-                setResizable (editor->isResizable(), false);
        #endif
     }
 
@@ -755,9 +751,9 @@ private:
                 notification.setBounds (r.removeFromTop (NotificationArea::height));
 
             if (editor != nullptr)
-                editor->setBoundsConstrained (editor->getLocalArea (this, r.toFloat())
-                                                     .withPosition (r.getTopLeft().toFloat().transformedBy (editor->getTransform().inverted()))
-                                                .toNearestInt());
+                editor->setBounds (editor->getLocalArea (this, r.toFloat())
+                                          .withPosition (r.getTopLeft().toFloat().transformedBy (editor->getTransform().inverted()))
+                                     .toNearestInt());
         }
 
     private:
@@ -819,22 +815,10 @@ private:
            #else
             if (editor != nullptr)
             {
-                const int extraHeight = shouldShowNotification ? NotificationArea::height : 0;
-                const auto rect = getSizeToContainEditor();
+                auto rect = getSizeToContainEditor();
 
-                if (auto* editorConstrainer = editor->getConstrainer())
-                {
-                    const auto borders = owner.getContentComponentBorder();
-                    const auto extraWindowWidth = borders.getLeftAndRight();
-                    const auto extraWindowHeight = extraHeight + borders.getTopAndBottom();
-
-                    owner.setResizeLimits (jmax (10, editorConstrainer->getMinimumWidth()  + extraWindowWidth),
-                                           jmax (10, editorConstrainer->getMinimumHeight() + extraWindowHeight),
-                                           editorConstrainer->getMaximumWidth()  + extraWindowWidth,
-                                           editorConstrainer->getMaximumHeight() + extraWindowHeight);
-                }
-
-                setSize (rect.getWidth(), rect.getHeight() + extraHeight);
+                setSize (rect.getWidth(),
+                         rect.getHeight() + (shouldShowNotification ? NotificationArea::height : 0));
             }
            #endif
         }

@@ -917,7 +917,7 @@ public:
         table.setOutlineThickness (1);
 
         // Add some columns to the table header, based on the column list in our database..
-        for (auto* columnXml : columnList->getChildIterator())
+        forEachXmlChildElement (*columnList, columnXml)
         {
             table.getHeader().addColumn (columnXml->getStringAttribute ("name"),
                                          columnXml->getIntAttribute ("columnId"),
@@ -1212,7 +1212,7 @@ private:
     // (a utility method to search our XML for the attribute that matches a column ID)
     String getAttributeNameForColumnId (const int columnId) const
     {
-        for (auto* columnXml : columnList->getChildIterator())
+        forEachXmlChildElement (*columnList, columnXml)
         {
             if (columnXml->getIntAttribute ("columnId") == columnId)
                 return columnXml->getStringAttribute ("name");

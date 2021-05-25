@@ -28,6 +28,10 @@ namespace juce
 
 extern ComponentPeer* createNonRepaintingEmbeddedWindowsPeer (Component&, void* parent);
 
+#if JUCE_WIN_PER_MONITOR_DPI_AWARE
+ extern void setThreadDPIAwarenessForWindow (HWND);
+#endif
+
 //==============================================================================
 class OpenGLContext::NativeContext
    #if JUCE_WIN_PER_MONITOR_DPI_AWARE
@@ -93,17 +97,15 @@ public:
 
     bool initialiseOnRenderThread (OpenGLContext& c)
     {
-        threadAwarenessSetter = std::make_unique<ScopedThreadDPIAwarenessSetter> (nativeWindow->getNativeHandle());
+       #if JUCE_WIN_PER_MONITOR_DPI_AWARE
+        setThreadDPIAwarenessForWindow ((HWND) nativeWindow->getNativeHandle());
+       #endif
+
         context = &c;
         return true;
     }
 
-    void shutdownOnRenderThread()
-    {
-        deactivateCurrentContext();
-        context = nullptr;
-        threadAwarenessSetter = nullptr;
-    }
+    void shutdownOnRenderThread()           { deactivateCurrentContext(); context = nullptr; }
 
     static void deactivateCurrentContext()  { wglMakeCurrent (nullptr, nullptr); }
     bool makeActive() const noexcept        { return isActive() || wglMakeCurrent (dc, renderContext) != FALSE; }
@@ -168,7 +170,6 @@ private:
 
     std::unique_ptr<DummyComponent> dummyComponent;
     std::unique_ptr<ComponentPeer> nativeWindow;
-    std::unique_ptr<ScopedThreadDPIAwarenessSetter> threadAwarenessSetter;
     HGLRC renderContext;
     HDC dc;
     OpenGLContext* context = {};
@@ -218,13 +219,7 @@ private:
     void createNativeWindow (Component& component)
     {
         auto* topComp = component.getTopLevelComponent();
-
-        {
-            auto* parentHWND = topComp->getWindowHandle();
-
-            ScopedThreadDPIAwarenessSetter setter { parentHWND };
-            nativeWindow.reset (createNonRepaintingEmbeddedWindowsPeer (*dummyComponent, parentHWND));
-        }
+        nativeWindow.reset (createNonRepaintingEmbeddedWindowsPeer (*dummyComponent, topComp->getWindowHandle()));
 
         if (auto* peer = topComp->getPeer())
         {

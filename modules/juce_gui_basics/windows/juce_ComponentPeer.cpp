@@ -584,10 +584,5 @@ ModifierKeys ComponentPeer::getCurrentModifiersRealtime() noexcept
     return ModifierKeys::currentModifiers;
 }
 
-//==============================================================================
-void ComponentPeer::forceDisplayUpdate()
-{
-    Desktop::getInstance().displays->refresh();
-}
 
 } // namespace juce

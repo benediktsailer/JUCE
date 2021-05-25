@@ -130,20 +130,16 @@ bool File::setAsCurrentWorkingDirectory() const
     return chdir (getFullPathName().toUTF8()) == 0;
 }
 
+#if JUCE_ANDROID
+ using juce_sigactionflags_type = unsigned long;
+#else
+ using juce_sigactionflags_type = int;
+#endif
+
 //==============================================================================
 // The unix siginterrupt function is deprecated - this does the same job.
 int juce_siginterrupt (int sig, int flag)
 {
-   #if JUCE_WASM
-    ignoreUnused (sig, flag);
-    return 0;
-   #else
-    #if JUCE_ANDROID
-     using juce_sigactionflags_type = unsigned long;
-    #else
-     using juce_sigactionflags_type = int;
-    #endif
-
     struct ::sigaction act;
     (void) ::sigaction (sig, nullptr, &act);
 
@@ -153,7 +149,6 @@ int juce_siginterrupt (int sig, int flag)
         act.sa_flags |= static_cast<juce_sigactionflags_type> (SA_RESTART);
 
     return ::sigaction (sig, &act, nullptr);
-   #endif
 }
 
 //==============================================================================
@@ -173,7 +168,6 @@ namespace
                  && JUCE_STAT (fileName.toUTF8(), &info) == 0;
     }
 
-   #if ! JUCE_WASM
     // if this file doesn't exist, find a parent of it that does..
     bool juce_doStatFS (File f, struct statfs& result)
     {
@@ -211,7 +205,6 @@ namespace
         if (isReadOnly != nullptr)
             *isReadOnly = access (path.toUTF8(), W_OK) != 0;
     }
-   #endif
 
     Result getResultForErrno()
     {
@@ -336,7 +329,6 @@ void File::getFileTimesInternal (int64& modificationTime, int64& accessTime, int
 
 bool File::setFileTimesInternal (int64 modificationTime, int64 accessTime, int64 /*creationTime*/) const
 {
-   #if ! JUCE_WASM
     juce_statStruct info;
 
     if ((modificationTime != 0 || accessTime != 0) && juce_stat (fullPath, info))
@@ -368,7 +360,6 @@ bool File::setFileTimesInternal (int64 modificationTime, int64 accessTime, int64
         return utime (fullPath.toUTF8(), &times) == 0;
        #endif
     }
-   #endif
 
     return false;
 }
@@ -542,7 +533,6 @@ String SystemStats::getEnvironmentVariable (const String& name, const String& de
 }
 
 //==============================================================================
-#if ! JUCE_WASM
 void MemoryMappedFile::openInternal (const File& file, AccessMode mode, bool exclusive)
 {
     jassert (mode == readOnly || mode == readWrite);
@@ -668,8 +658,6 @@ int File::getVolumeSerialNumber() const
 {
     return 0;
 }
-
-#endif
 
 //==============================================================================
 #if ! JUCE_IOS
@@ -1022,7 +1010,6 @@ void JUCE_CALLTYPE Thread::setCurrentThreadAffinityMask (uint32 affinityMask)
 }
 
 //==============================================================================
-#if ! JUCE_WASM
 bool DynamicLibrary::open (const String& name)
 {
     close();
@@ -1043,6 +1030,7 @@ void* DynamicLibrary::getFunction (const String& functionName) noexcept
 {
     return handle != nullptr ? dlsym (handle, functionName.toUTF8()) : nullptr;
 }
+
 
 //==============================================================================
 #if JUCE_LINUX || JUCE_ANDROID
@@ -1136,7 +1124,7 @@ public:
         if (childPID == 0)
             return false;
 
-        int childState = 0;
+        int childState;
         auto pid = waitpid (childPID, &childState, WNOHANG);
 
         if (pid == 0)
@@ -1232,8 +1220,6 @@ bool ChildProcess::start (const StringArray& args, int streamFlags)
 
     return activeProcess != nullptr;
 }
-
-#endif
 
 //==============================================================================
 struct HighResolutionTimer::Pimpl

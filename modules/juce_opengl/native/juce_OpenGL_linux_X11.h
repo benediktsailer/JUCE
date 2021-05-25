@@ -97,7 +97,7 @@ public:
         XSetWindowAttributes swa;
         swa.colormap = colourMap;
         swa.border_pixel = 0;
-        swa.event_mask = embeddedWindowEventMask;
+        swa.event_mask = ExposureMask | StructureNotifyMask;
 
         auto glBounds = component.getTopLevelComponent()
                            ->getLocalArea (&component, component.getLocalBounds());
@@ -133,18 +133,9 @@ public:
             if (embeddedWindow != 0)
             {
                 XWindowSystemUtilities::ScopedXLock xLock;
-
                 X11Symbols::getInstance()->xUnmapWindow (display, embeddedWindow);
                 X11Symbols::getInstance()->xDestroyWindow (display, embeddedWindow);
-                X11Symbols::getInstance()->xSync (display, False);
-
-                XEvent event;
-                while (X11Symbols::getInstance()->xCheckWindowEvent (display,
-                                                                     embeddedWindow,
-                                                                     embeddedWindowEventMask,
-                                                                     &event) == True)
-                {
-                }
+                X11Symbols::getInstance()->xSync (display, True);
             }
         }
 
@@ -242,8 +233,6 @@ public:
     struct Locker { Locker (NativeContext&) {} };
 
 private:
-    static constexpr int embeddedWindowEventMask = ExposureMask | StructureNotifyMask;
-
     Component& component;
     GLXContext renderContext = {};
     Window embeddedWindow = {};

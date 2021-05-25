@@ -646,7 +646,7 @@ void TreeView::restoreOpennessState (const XmlElement& newState, const bool rest
         {
             clearSelectedItems();
 
-            for (auto* e : newState.getChildWithTagNameIterator ("SELECTED"))
+            forEachXmlChildElementWithTagName (newState, e, "SELECTED")
                 if (auto* item = rootItem->findItemFromIdentifierString (e->getStringAttribute ("id")))
                     item->setSelected (true, false);
         }
@@ -1834,7 +1834,7 @@ void TreeViewItem::restoreOpennessState (const XmlElement& e)
         Array<TreeViewItem*> items;
         items.addArray (subItems);
 
-        for (auto* n : e.getChildIterator())
+        forEachXmlChildElement (e, n)
         {
             auto id = n->getStringAttribute ("id");
 

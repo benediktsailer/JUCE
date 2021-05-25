@@ -940,7 +940,7 @@ struct JavascriptEngine::RootObject   : public DynamicObject
         {
             for (;;)
             {
-                p.incrementToEndOfWhitespace();
+                p = p.findEndOfWhitespace();
 
                 if (*p == '/')
                 {

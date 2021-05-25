@@ -439,7 +439,7 @@ void TableHeaderComponent::restoreFromString (const String& storedVersion)
     {
         int index = 0;
 
-        for (auto* col : storedXML->getChildIterator())
+        forEachXmlChildElement (*storedXML, col)
         {
             auto tabId = col->getIntAttribute ("id");
 

@@ -83,6 +83,9 @@ JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4355)
 //==============================================================================
 namespace juce
 {
+#if JUCE_WINDOWS && JUCE_WIN_PER_MONITOR_DPI_AWARE
+ extern void setThreadDPIAwarenessForWindow (HWND);
+#endif
 
 //==============================================================================
 namespace
@@ -379,7 +382,7 @@ private:
         switchValueType.entries.add (new Entry({ TRANS("Off"), Range ("[0, 0.5[") }));
         switchValueType.entries.add (new Entry({ TRANS("On"),  Range ("[0.5, 1]") }));
 
-        for (auto* item : xml.getChildIterator())
+        forEachXmlChildElement (xml, item)
         {
             if (item->hasTagName ("Param"))           parseParam (*item, nullptr, nullptr);
             else if (item->hasTagName ("ValueType"))  parseValueType (*item);
@@ -433,7 +436,7 @@ private:
         int curEntry = 0;
         const int numEntries = item.getNumChildElements();
 
-        for (auto* entryXml : item.getChildWithTagNameIterator ("Entry"))
+        forEachXmlChildElementWithTagName (item, entryXml, "Entry")
         {
             auto entry = new Entry();
             entry->name = entryXml->getStringAttribute ("name");
@@ -462,7 +465,7 @@ private:
         templates.add (temp);
         temp->name = item.getStringAttribute ("name");
 
-        for (auto* param : item.getChildIterator())
+        forEachXmlChildElement (item, param)
             parseParam (*param, nullptr, temp);
     }
 
@@ -511,7 +514,7 @@ private:
         }
         else
         {
-            for (auto* subItem : item.getChildIterator())
+            forEachXmlChildElement (item, subItem)
             {
                 if (subItem->hasTagName ("Param"))       parseParam (*subItem, group, nullptr);
                 else if (subItem->hasTagName ("Group"))  parseGroup (*subItem, group);
@@ -1599,8 +1602,8 @@ struct VSTPluginInstance     : public AudioPluginInstance,
 
     void handleAsyncUpdate() override
     {
-        updateHostDisplay (AudioProcessorListener::ChangeDetails().withProgramChanged (true)
-                                                                  .withParameterInfoChanged (true));
+        // indicates that something about the plugin has changed..
+        updateHostDisplay();
     }
 
     pointer_sized_int handleCallback (int32 opcode, int32 index, pointer_sized_int value, void* ptr, float opt)
@@ -2851,30 +2854,40 @@ public:
         if (recursiveResize)
             return;
 
-        if (auto* peer = getTopLevelComponent()->getPeer())
-        {
-            const ScopedValueSetter<bool> recursiveResizeSetter (recursiveResize, true);
+        auto* topComp = getTopLevelComponent();
 
-            auto pos = (peer->getAreaCoveredBy (*this).toFloat() * nativeScaleFactor).toNearestInt();
+        if (topComp->getPeer() != nullptr)
+        {
+            auto pos = (topComp->getLocalPoint (this, Point<int>()) * nativeScaleFactor).roundToInt();
+
+            recursiveResize = true;
 
            #if JUCE_WINDOWS
             if (pluginHWND != 0)
             {
-                ScopedThreadDPIAwarenessSetter threadDpiAwarenessSetter { pluginHWND };
-                MoveWindow (pluginHWND, pos.getX(), pos.getY(), pos.getWidth(), pos.getHeight(), TRUE);
+               #if JUCE_WIN_PER_MONITOR_DPI_AWARE
+                setThreadDPIAwarenessForWindow (pluginHWND);
+               #endif
+
+                MoveWindow (pluginHWND, pos.getX(), pos.getY(),
+                            roundToInt (getWidth()  * nativeScaleFactor),
+                            roundToInt (getHeight() * nativeScaleFactor),
+                            TRUE);
             }
            #elif JUCE_LINUX
             if (pluginWindow != 0)
             {
                 X11Symbols::getInstance()->xMoveResizeWindow (display, pluginWindow,
                                                               pos.getX(), pos.getY(),
-                                                              (unsigned int) pos.getWidth(),
-                                                              (unsigned int) pos.getHeight());
+                                                              static_cast<unsigned int> (roundToInt ((float) getWidth()  * nativeScaleFactor)),
+                                                              static_cast<unsigned int> (roundToInt ((float) getHeight() * nativeScaleFactor)));
 
                 X11Symbols::getInstance()->xMapRaised (display, pluginWindow);
                 X11Symbols::getInstance()->xFlush (display);
             }
            #endif
+
+            recursiveResize = false;
         }
     }
 
@@ -3102,12 +3115,7 @@ private:
         JUCE_END_IGNORE_WARNINGS_MSVC
 
         RECT r;
-
-        {
-            ScopedThreadDPIAwarenessSetter threadDpiAwarenessSetter { pluginHWND };
-            GetWindowRect (pluginHWND, &r);
-        }
-
+        GetWindowRect (pluginHWND, &r);
         auto w = (int) (r.right - r.left);
         auto h = (int) (r.bottom - r.top);
 
@@ -3122,7 +3130,9 @@ private:
                 // very dodgy logic to decide which size is right.
                 if (std::abs (rw - w) > 350 || std::abs (rh - h) > 350)
                 {
-                    ScopedThreadDPIAwarenessSetter threadDpiAwarenessSetter { pluginHWND };
+                   #if JUCE_WIN_PER_MONITOR_DPI_AWARE
+                    setThreadDPIAwarenessForWindow (pluginHWND);
+                   #endif
 
                     SetWindowPos (pluginHWND, 0,
                                   0, 0, roundToInt (rw * nativeScaleFactor), roundToInt (rh * nativeScaleFactor),

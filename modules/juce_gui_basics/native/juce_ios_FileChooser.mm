@@ -140,8 +140,6 @@ public:
     {
        #if JUCE_MODAL_LOOPS_PERMITTED
         runModalLoop();
-       #else
-        jassertfalse;
        #endif
     }
 
@@ -379,10 +377,10 @@ bool FileChooser::isPlatformDialogAvailable()
    #endif
 }
 
-std::shared_ptr<FileChooser::Pimpl> FileChooser::showPlatformDialog (FileChooser& owner, int flags,
-                                                                     FilePreviewComponent*)
+FileChooser::Pimpl* FileChooser::showPlatformDialog (FileChooser& owner, int flags,
+                                                     FilePreviewComponent*)
 {
-    return std::make_shared<FileChooser::Native> (owner, flags);
+    return new FileChooser::Native (owner, flags);
 }
 
 #if JUCE_DEPRECATION_IGNORED

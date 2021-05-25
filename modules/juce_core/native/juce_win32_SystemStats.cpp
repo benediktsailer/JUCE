@@ -23,7 +23,7 @@
 namespace juce
 {
 
-#if JUCE_MSVC && ! defined (__INTEL_COMPILER)
+#if JUCE_MSVC
  #pragma intrinsic (__cpuid)
  #pragma intrinsic (__rdtsc)
 #endif

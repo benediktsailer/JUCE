@@ -367,7 +367,7 @@ void PropertyPanel::restoreOpennessState (const XmlElement& xml)
     {
         auto sections = getSectionNames();
 
-        for (auto* e : xml.getChildWithTagNameIterator ("SECTION"))
+        forEachXmlChildElementWithTagName (xml, e, "SECTION")
         {
             setSectionOpen (sections.indexOf (e->getStringAttribute ("name")),
                             e->getBoolAttribute ("open"));

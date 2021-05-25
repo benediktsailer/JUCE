@@ -781,8 +781,6 @@ private:
 
         if (wantsNormalise == Convolution::Normalise::yes)
             normaliseImpulseResponse (resampled);
-        else
-            resampled.applyGain ((float) (originalSampleRate / processSpec.sampleRate));
 
         const auto currentLatency = jmax (processSpec.maximumBlockSize, (uint32) latency.latencyInSamples);
         const auto maxBufferSize = shouldBeZeroLatency ? static_cast<int> (processSpec.maximumBlockSize)

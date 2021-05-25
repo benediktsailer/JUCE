@@ -353,22 +353,11 @@ struct AudioUnitHelpers
         auto defaultInputs  = processor.getChannelCountOfBus (true,  0);
         auto defaultOutputs = processor.getChannelCountOfBus (false, 0);
 
-        struct Channels
-        {
-            SInt16 ins, outs;
-
-            std::pair<SInt16, SInt16> makePair() const noexcept { return std::make_pair (ins, outs); }
-
-            bool operator<  (const Channels& other) const noexcept { return makePair() <  other.makePair(); }
-            bool operator== (const Channels& other) const noexcept { return makePair() == other.makePair(); }
-        };
-
-        SortedSet<Channels> supportedChannels;
+        SortedSet<int> supportedChannels;
 
         // add the current configuration
         if (defaultInputs != 0 || defaultOutputs != 0)
-            supportedChannels.add ({ static_cast<SInt16> (defaultInputs),
-                                     static_cast<SInt16> (defaultOutputs) });
+            supportedChannels.add ((defaultInputs << 16) | defaultOutputs);
 
         for (auto inChanNum = hasMainInputBus ? 1 : 0; inChanNum <= (hasMainInputBus ? maxNumChanToCheckFor : 0); ++inChanNum)
         {
@@ -386,16 +375,19 @@ struct AudioUnitHelpers
                     if (! isNumberOfChannelsSupported (outBus, outChanNum, outLayout))
                         continue;
 
-                supportedChannels.add ({ static_cast<SInt16> (hasMainInputBus  ? outLayout.getMainInputChannels()  : 0),
-                                         static_cast<SInt16> (hasMainOutputBus ? outLayout.getMainOutputChannels() : 0) });
+                supportedChannels.add (((hasMainInputBus  ? outLayout.getMainInputChannels()  : 0) << 16)
+                                      | (hasMainOutputBus ? outLayout.getMainOutputChannels() : 0));
             }
         }
 
         auto hasInOutMismatch = false;
 
-        for (const auto& supported : supportedChannels)
+        for (auto supported : supportedChannels)
         {
-            if (supported.ins != supported.outs)
+            auto numInputs  = (supported >> 16) & 0xffff;
+            auto numOutputs = (supported >> 0)  & 0xffff;
+
+            if (numInputs != numOutputs)
             {
                 hasInOutMismatch = true;
                 break;
@@ -406,10 +398,9 @@ struct AudioUnitHelpers
 
         for (auto inChanNum = hasMainInputBus ? 1 : 0; inChanNum <= (hasMainInputBus ? maxNumChanToCheckFor : 0); ++inChanNum)
         {
-            Channels channelConfiguration { static_cast<SInt16> (inChanNum),
-                                            static_cast<SInt16> (hasInOutMismatch ? defaultOutputs : inChanNum) };
+            auto channelConfiguration = (inChanNum << 16) | (hasInOutMismatch ? defaultOutputs : inChanNum);
 
-            if (supportedChannels.contains (channelConfiguration))
+            if (! supportedChannels.contains (channelConfiguration))
             {
                 hasUnsupportedInput = true;
                 break;
@@ -418,23 +409,25 @@ struct AudioUnitHelpers
 
         for (auto outChanNum = hasMainOutputBus ? 1 : 0; outChanNum <= (hasMainOutputBus ? maxNumChanToCheckFor : 0); ++outChanNum)
         {
-            Channels channelConfiguration { static_cast<SInt16> (hasInOutMismatch ? defaultInputs : outChanNum),
-                                            static_cast<SInt16> (outChanNum) };
+            auto channelConfiguration = ((hasInOutMismatch ? defaultInputs : outChanNum) << 16) | outChanNum;
 
-            if (supportedChannels.contains (channelConfiguration))
+            if (! supportedChannels.contains (channelConfiguration))
             {
                 hasUnsupportedOutput = true;
                 break;
             }
         }
 
-        for (const auto& supported : supportedChannels)
+        for (auto supported : supportedChannels)
         {
+            auto numInputs  = (supported >> 16) & 0xffff;
+            auto numOutputs = (supported >> 0)  & 0xffff;
+
             AUChannelInfo info;
 
             // see here: https://developer.apple.com/library/mac/documentation/MusicAudio/Conceptual/AudioUnitProgrammingGuide/TheAudioUnit/TheAudioUnit.html
-            info.inChannels  = static_cast<SInt16> (hasMainInputBus  ? (hasUnsupportedInput  ? supported.ins  : (hasInOutMismatch && (! hasUnsupportedOutput) ? -2 : -1)) : 0);
-            info.outChannels = static_cast<SInt16> (hasMainOutputBus ? (hasUnsupportedOutput ? supported.outs : (hasInOutMismatch && (! hasUnsupportedInput)  ? -2 : -1)) : 0);
+            info.inChannels  = static_cast<SInt16> (hasMainInputBus  ? (hasUnsupportedInput  ? numInputs :  (hasInOutMismatch && (! hasUnsupportedOutput) ? -2 : -1)) : 0);
+            info.outChannels = static_cast<SInt16> (hasMainOutputBus ? (hasUnsupportedOutput ? numOutputs : (hasInOutMismatch && (! hasUnsupportedInput)  ? -2 : -1)) : 0);
 
             if (info.inChannels == -2 && info.outChannels == -2)
                 info.inChannels = -1;

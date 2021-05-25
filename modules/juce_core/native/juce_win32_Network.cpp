@@ -35,14 +35,10 @@ namespace juce
 class WebInputStream::Pimpl
 {
 public:
-    Pimpl (WebInputStream& pimplOwner, const URL& urlToCopy, bool addParametersToBody)
-        : owner (pimplOwner),
-          url (urlToCopy),
-          addParametersToRequestBody (addParametersToBody),
-          hasBodyDataToSend (addParametersToRequestBody || url.hasBodyDataToSend()),
-          httpRequestCmd (hasBodyDataToSend ? "POST" : "GET")
-    {
-    }
+    Pimpl (WebInputStream& pimplOwner, const URL& urlToCopy, bool shouldBePost)
+        : statusCode (0), owner (pimplOwner), url (urlToCopy), isPost (shouldBePost),
+          httpRequestCmd (isPost ? "POST" : "GET")
+    {}
 
     ~Pimpl()
     {
@@ -79,7 +75,7 @@ public:
                 return false;
         }
 
-        auto address = url.toString (! addParametersToRequestBody);
+        String address = url.toString (! isPost);
 
         while (numRedirectsToFollow-- >= 0)
         {
@@ -230,7 +226,7 @@ public:
         return true;
     }
 
-    int statusCode = 0;
+    int statusCode;
 
 private:
     //==============================================================================
@@ -241,7 +237,7 @@ private:
     MemoryBlock postData;
     int64 position = 0;
     bool finished = false;
-    const bool addParametersToRequestBody, hasBodyDataToSend;
+    const bool isPost;
     int timeOutMs = 0;
     String httpRequestCmd;
     int numRedirectsToFollow = 5;
@@ -292,11 +288,8 @@ private:
             uc.lpszPassword = password;
             uc.dwPasswordLength = passwordNumChars;
 
-            if (hasBodyDataToSend)
-                WebInputStream::createHeadersAndPostData (url,
-                                                          headers,
-                                                          postData,
-                                                          addParametersToRequestBody);
+            if (isPost)
+                WebInputStream::createHeadersAndPostData (url, headers, postData);
 
             if (InternetCrackUrl (address.toWideCharPointer(), 0, 0, &uc))
                 openConnection (uc, sessionHandle, address, listener);

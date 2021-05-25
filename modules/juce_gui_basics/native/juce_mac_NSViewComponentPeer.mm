@@ -726,12 +726,6 @@ public:
             [notificationCenter removeObserver: view
                                           name: NSWindowWillMiniaturizeNotification
                                         object: currentWindow];
-
-           #if JUCE_COREGRAPHICS_DRAW_ASYNC
-            [notificationCenter removeObserver: view
-                                          name: NSWindowDidBecomeKeyNotification
-                                        object: currentWindow];
-           #endif
         }
 
         if (isSharedWindow && [view window] == window && newWindow == nullptr)
@@ -1074,11 +1068,6 @@ public:
         grabFocus();
     }
 
-    void resignKeyWindow()
-    {
-        viewFocusLoss();
-    }
-
     bool windowShouldClose()
     {
         if (! isValidPeer (this))
@@ -1118,13 +1107,6 @@ public:
                                    selector: dismissModalsSelector
                                        name: NSWindowWillMiniaturizeNotification
                                      object: currentWindow];
-
-           #if JUCE_COREGRAPHICS_DRAW_ASYNC
-            [notificationCenter addObserver: view
-                                   selector: becomeKeySelector
-                                       name: NSWindowDidBecomeKeyNotification
-                                     object: currentWindow];
-           #endif
         }
     }
 
@@ -1132,11 +1114,6 @@ public:
     {
         if (hasNativeTitleBar() || isSharedWindow)
             sendModalInputAttemptIfBlocked();
-    }
-
-    void becomeKey()
-    {
-        component.repaint();
     }
 
     void liveResizingStart()
@@ -1455,7 +1432,7 @@ public:
 
     void grabFocus() override
     {
-        if (window != nil && [window canBecomeKeyWindow])
+        if (window != nil)
         {
             [window makeKeyWindow];
             [window makeFirstResponder: view];
@@ -1506,7 +1483,6 @@ public:
     static const SEL frameChangedSelector;
     static const SEL asyncMouseDownSelector;
     static const SEL asyncMouseUpSelector;
-    static const SEL becomeKeySelector;
 
 private:
     static NSView* createViewInstance();
@@ -1676,7 +1652,6 @@ const SEL NSViewComponentPeer::dismissModalsSelector  = @selector (dismissModals
 const SEL NSViewComponentPeer::frameChangedSelector   = @selector (frameChanged:);
 const SEL NSViewComponentPeer::asyncMouseDownSelector = @selector (asyncMouseDown:);
 const SEL NSViewComponentPeer::asyncMouseUpSelector   = @selector (asyncMouseUp:);
-const SEL NSViewComponentPeer::becomeKeySelector      = @selector (becomeKey:);
 JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 
 //==============================================================================
@@ -1747,7 +1722,6 @@ struct JuceNSViewClass   : public ObjCClass<NSView>
         addMethod (NSViewComponentPeer::asyncMouseDownSelector, asyncMouseDown,           "v@:@");
         addMethod (NSViewComponentPeer::asyncMouseUpSelector,   asyncMouseUp,             "v@:@");
         addMethod (NSViewComponentPeer::frameChangedSelector,   frameChanged,             "v@:@");
-        addMethod (NSViewComponentPeer::becomeKeySelector,      becomeKey,                "v@:@");
 
         addProtocol (@protocol (NSTextInput));
 
@@ -1816,7 +1790,6 @@ private:
     static void frameChanged (id self, SEL, NSNotification*)   { if (auto* p = getOwner (self)) p->redirectMovedOrResized(); }
     static void viewDidMoveToWindow (id self, SEL)             { if (auto* p = getOwner (self)) p->viewMovedToWindow(); }
     static void dismissModals (id self, SEL)                   { if (auto* p = getOwner (self)) p->dismissModals(); }
-    static void becomeKey (id self, SEL)                       { if (auto* p = getOwner (self)) p->becomeKey(); }
 
     static void viewWillDraw (id self, SEL)
     {
@@ -2091,7 +2064,6 @@ struct JuceNSWindowClass   : public ObjCClass<NSWindow>
         addMethod (@selector (canBecomeKeyWindow),                  canBecomeKeyWindow,        "c@:");
         addMethod (@selector (canBecomeMainWindow),                 canBecomeMainWindow,       "c@:");
         addMethod (@selector (becomeKeyWindow),                     becomeKeyWindow,           "v@:");
-        addMethod (@selector (resignKeyWindow),                     resignKeyWindow,           "v@:");
         addMethod (@selector (windowShouldClose:),                  windowShouldClose,         "c@:@");
         addMethod (@selector (constrainFrameRect:toScreen:),        constrainFrameRect,        @encode (NSRect), "@:",  @encode (NSRect), "@");
         addMethod (@selector (windowWillResize:toSize:),            windowWillResize,          @encode (NSSize), "@:@", @encode (NSSize));
@@ -2151,14 +2123,6 @@ private:
             if (! owner->getComponent().isVisible())
                 [(NSWindow*) self orderOut: nil];
         }
-    }
-
-    static void resignKeyWindow (id self, SEL)
-    {
-        sendSuperclassMessage<void> (self, @selector (resignKeyWindow));
-
-        if (auto* owner = getOwner (self))
-            owner->resignKeyWindow();
     }
 
     static BOOL windowShouldClose (id self, SEL, id /*window*/)

@@ -790,7 +790,7 @@ public:
         ReleaseControl (index + 2);
     }
 
-    void audioProcessorChanged (AudioProcessor*, const ChangeDetails&) override
+    void audioProcessorChanged (AudioProcessor*) override
     {
         // xxx is there an RTAS equivalent?
     }

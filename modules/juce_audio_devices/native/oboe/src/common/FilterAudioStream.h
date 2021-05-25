@@ -173,10 +173,7 @@ public:
             int64_t *timeNanoseconds) override {
         int64_t childPosition = 0;
         Result result = mChildStream->getTimestamp(clockId, &childPosition, timeNanoseconds);
-        // It is OK if framePosition is null.
-        if (framePosition) {
-            *framePosition = childPosition * mRateScaler;
-        }
+        *framePosition = childPosition * mRateScaler;
         return result;
     }
 

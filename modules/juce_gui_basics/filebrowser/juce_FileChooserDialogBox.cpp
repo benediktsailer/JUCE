@@ -114,8 +114,6 @@ FileChooserDialogBox::FileChooserDialogBox (const String& name,
 
     if (parentComp != nullptr)
         parentComp->addAndMakeVisible (this);
-    else
-        setAlwaysOnTop (juce_areThereAnyAlwaysOnTopWindows());
 }
 
 FileChooserDialogBox::~FileChooserDialogBox()
