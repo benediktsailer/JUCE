@@ -588,7 +588,7 @@ void IPAddress::findAllAddresses (Array<IPAddress>& result, bool includeIPv6)
     }
 }
 
-IPAddress IPAddress::getInterfaceBroadcastAddress (const IPAddress&)
+IPAddress IPAddress::getInterfaceBroadcastAddress (const IPAddress& ip)
 {
     IPAddress broadcastAddress;
 
